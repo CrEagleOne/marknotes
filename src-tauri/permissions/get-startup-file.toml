@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-get-startup-file"
+description = "Allows retrieving the file MarkNotes was launched with (double-click on a .md file, or 'Open with')."
+commands.allow = ["get_startup_file"]

@@ -1,0 +1,43 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "katex"
+        update-types: ["version-update:semver-major"]
+    groups:
+      npm-development-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+      npm-production-dependencies:
+        dependency-type: production
+        update-types: [minor, patch]
+      katex-stack:
+        patterns:
+          - "katex"
+          - "marked-katex-extension"
+
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      cargo-minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns: ["*"]

@@ -1,0 +1,43 @@
+﻿@import "tailwindcss";
+
+html, body, #root { min-height: 100%; }
+body { margin: 0; }
+
+.markdown-body h1 { font-size: 2.25rem; line-height: 1.15; font-weight: 750; letter-spacing: -0.035em; margin: 0 0 1.25rem; }
+.markdown-body h2 { font-size: 1.65rem; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; margin: 2rem 0 0.8rem; }
+.markdown-body h3 { font-size: 1.25rem; line-height: 1.35; font-weight: 700; margin: 1.6rem 0 0.6rem; }
+.markdown-body p { margin: 0.8rem 0; line-height: 1.75; }
+.markdown-body ul, .markdown-body ol { margin: 0.8rem 0; padding-left: 1.6rem; }
+.markdown-body ul { list-style: disc; }
+.markdown-body ol { list-style: decimal; }
+.markdown-body li { margin: 0.3rem 0; }
+.markdown-body blockquote { border-left: 4px solid #3b82f6; background: rgba(59,130,246,.07); margin: 1.2rem 0; padding: .7rem 1rem; border-radius: 0 .7rem .7rem 0; color: #475569; }
+.dark .markdown-body blockquote { color: #cbd5e1; }
+.markdown-body code { background: #e2e8f0; border-radius: .35rem; padding: .12rem .35rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
+.dark .markdown-body code { background: #1e293b; }
+.markdown-body pre { overflow-x: auto; background: #0f172a; color: #e2e8f0; padding: 1rem; border-radius: .75rem; margin: 1rem 0; }
+.markdown-body pre code { display: block; background: transparent; padding: 0; }
+.markdown-body pre code.hljs { color: #e6edf3; }
+.markdown-body pre code.language-plaintext { color: inherit; }
+.markdown-body a { color: #2563eb; text-decoration: underline; text-underline-offset: 3px; }
+.dark .markdown-body a { color: #60a5fa; }
+.markdown-body img { max-width: 100%; border-radius: .75rem; }
+.markdown-body hr { border: 0; border-top: 1px solid #cbd5e1; margin: 2rem 0; }
+.markdown-body table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.markdown-body th, .markdown-body td { border: 1px solid #cbd5e1; padding: .55rem .7rem; text-align: left; }
+.dark .markdown-body th, .dark .markdown-body td { border-color: #334155; }
+.markdown-body th { background: #f1f5f9; font-weight: 700; }
+.dark .markdown-body th { background: #1e293b; }
+
+.print-document { display: none; }
+@media print {
+  @page { size: A4; margin: 18mm; }
+  body { background: #fff !important; }
+  .app-screen { display: none !important; }
+  .print-document { display: block !important; color: #000 !important; }
+  .print-document a { color: #000 !important; }
+  .print-document pre { white-space: pre-wrap; break-inside: avoid; }
+  .print-document table, .print-document blockquote, .print-document img { break-inside: avoid; }
+}
+
+

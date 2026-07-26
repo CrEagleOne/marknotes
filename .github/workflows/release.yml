@@ -1,0 +1,137 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release-notes:
+    runs-on: ubuntu-latest
+    outputs:
+      body: ${{ steps.generate.outputs.result }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Find previous release tag
+        id: previous-tag
+        shell: bash
+        run: |
+          previous_tag=$(git describe --tags --abbrev=0 "${GITHUB_SHA}^" 2>/dev/null || true)
+          echo "name=${previous_tag}" >> "$GITHUB_OUTPUT"
+      - name: Generate changelog and commit list
+        id: generate
+        uses: actions/github-script@v9
+        with:
+          result-encoding: string
+          script: |
+            const tagName = context.ref.replace('refs/tags/', '');
+            const previousTag = '${{ steps.previous-tag.outputs.name }}';
+            const { data } = await github.rest.repos.generateReleaseNotes({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tagName,
+              target_commitish: context.sha,
+            });
+
+            const commits = previousTag
+              ? await github.paginate(github.rest.repos.compareCommits, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  base: previousTag,
+                  head: tagName,
+                  per_page: 100,
+                }, ({ data: comparison }) => comparison.commits)
+              : await github.paginate(github.rest.repos.listCommits, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  sha: tagName,
+                  per_page: 100,
+                });
+
+            const commitLines = commits
+              .map((commit) => {
+                const subject = commit.commit.message.split('\n', 1)[0];
+                return `- ${subject} ([${commit.sha.slice(0, 7)}](${commit.html_url}))`;
+              })
+              .reverse();
+
+            return `${data.body}\n\n## Commits\n${commitLines.join('\n') || '- No commits found.'}`;
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundle_args: --bundles nsis,msi
+            artifact_name: windows
+          - os: ubuntu-22.04
+            bundle_args: --bundles appimage,deb
+            artifact_name: linux
+          - os: macos-latest
+            bundle_args: --bundles dmg
+            artifact_name: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install Linux bundle dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev patchelf
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v1
+        with:
+          args: ${{ matrix.bundle_args }}
+
+      - name: Strip locale suffix from MSI filename
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for f in src-tauri/target/release/bundle/msi/*_en-US.msi; do
+            mv "$f" "${f/_en-US/}"
+          done
+
+      - name: Collect bundle artifacts
+        shell: bash
+        run: |
+          mkdir -p out
+          find src-tauri/target/release/bundle \
+            \( -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.dmg" \) \
+            -exec cp {} out/ \;
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bundles-${{ matrix.artifact_name }}
+          path: out/*
+          if-no-files-found: error
+
+  publish:
+    needs: [release-notes, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: bundles-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create release and upload bundles
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "MarkNotes ${{ github.ref_name }}"
+          body: ${{ needs.release-notes.outputs.body }}
+          draft: true
+          fail_on_unmatched_files: true
+          files: dist/*
